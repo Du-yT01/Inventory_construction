@@ -522,8 +522,8 @@
                     </div>
                     <div class="chart-grid">
                         <div class="card chart-card md col-7">
-                            <div class="chart-header"><span class="chart-title">So Sánh Kế Hoạch vs Thực Tế Xuất (Top 10
-                                    Dự Án)</span></div>
+                            <div class="chart-header"><span class="chart-title">So Sánh Kế Hoạch vs Thực Tế Xuất</span>
+                            </div>
                             <div id="c21" class="chart-container"></div>
                         </div>
                         <div class="card chart-card md col-5">
@@ -918,9 +918,24 @@
             let opt = JSON.parse(JSON.stringify(baseOption));
             switch (type) {
                 case 'combo':
-                    opt.xAxis = { type: 'category', data: data.x };
-                    opt.yAxis = [{ type: 'value' }, { type: 'value' }];
-                    opt.series = data.s.map((s, i) => ({ name: s.n, type: s.t, smooth: true, data: s.d, itemStyle: { color: s.c }, areaStyle: s.t === 'bar' ? null : { opacity: 0.1 }, yAxisIndex: s.t === 'bar' ? 1 : 0, barWidth: '40%', itemStyle: { borderRadius: s.t === 'bar' ? [4, 4, 0, 0] : 0, color: s.c, opacity: s.t === 'bar' ? 0.3 : 1 } }));
+                    opt.xAxis = { type: 'category', data: data.x, splitLine: { show: false } };
+                    opt.yAxis = [
+                        { type: 'value', name: 'Giá trị (B)', splitLine: { show: false } },
+                        { type: 'value', name: 'Tồn (B)', splitLine: { show: false } }
+                    ];
+                    opt.series = data.s.map((s, i) => ({
+                        name: s.n,
+                        type: s.t,
+                        smooth: true,
+                        data: s.d,
+                        yAxisIndex: s.t === 'bar' ? 1 : 0,
+                        barWidth: '45%',
+                        lineStyle: s.t === 'line' ? { width: 3 } : undefined,
+                        itemStyle: {
+                            borderRadius: s.t === 'bar' ? [4, 4, 0, 0] : 0,
+                            color: s.t === 'bar' ? '#f093fb' : s.c
+                        }
+                    }));
                     break;
                 case 'line':
                     opt.xAxis = { type: 'category', data: data.x };
@@ -944,18 +959,49 @@
                     opt.series = data.s.map((s, i) => ({ name: s.n, type: 'bar', data: s.d, color: colors[i], itemStyle: { borderRadius: [4, 4, 0, 0] }, barWidth: '50%' }));
                     break;
                 case 'barVDemand':
-                    opt.xAxis = { type: 'category', data: data.x }; opt.yAxis = { type: 'value', name: 'Giá trị (B)' };
+                    opt.xAxis = { type: 'category', data: data.x };
+                    opt.yAxis = { type: 'value', name: 'Giá trị (B)' };
                     opt.series = [
-                        { name: 'Tồn hiện tại', type: 'bar', data: data.tồn, color: colors[0], itemStyle: { borderRadius: [4, 4, 0, 0] }, barWidth: '35%', label: { show: true, position: 'top', formatter: p => { const diff = Math.round((data.tồn[p.dataIndex] / data.nhuCầu[p.dataIndex] - 1) * 100); return diff >= 0 ? `+${diff}%` : `${diff}%`; }, color: p => (data.tồn[p.dataIndex] >= data.nhuCầu[p.dataIndex]) ? colors[3] : colors[5], fontSize: 10 } },
+                        {
+                            name: 'Tồn hiện tại',
+                            type: 'bar',
+                            data: data.tồn.map((v, i) => ({
+                                value: v,
+                                itemStyle: { color: v < data.nhuCầu[i] ? colors[5] : colors[3], borderRadius: [4, 4, 0, 0] }
+                            })),
+                            barWidth: '35%',
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: p => {
+                                    const diff = Math.round((data.tồn[p.dataIndex] / data.nhuCầu[p.dataIndex] - 1) * 100);
+                                    return diff >= 0 ? `+${diff}%` : `${diff}%`;
+                                },
+                                color: p => (data.tồn[p.dataIndex] >= data.nhuCầu[p.dataIndex]) ? colors[3] : colors[5],
+                                fontSize: 10
+                            }
+                        },
                         { name: 'Nhu cầu 30 ngày', type: 'bar', data: data.nhuCầu, color: 'rgba(255,255,255,0.15)', itemStyle: { borderRadius: [4, 4, 0, 0] }, barWidth: '35%' }
                     ];
                     opt.legend = { data: ['Tồn hiện tại', 'Nhu cầu 30 ngày'], textStyle: { color: '#94a3b8' }, bottom: 0 };
                     break;
                 case 'barCompare':
-                    opt.xAxis = { type: 'category', data: data.x, axisLabel: { fontSize: 10 } }; opt.yAxis = { type: 'value' };
+                    opt.xAxis = { type: 'category', data: data.x, axisLabel: { fontSize: 10 } };
+                    opt.yAxis = { type: 'value' };
                     opt.series = [
-                        { name: data.s[0].n, type: 'bar', data: data.s[0].d, color: 'rgba(255,255,255,0.1)', barWidth: '35%' },
-                        { name: data.s[1].n, type: 'bar', data: data.s[1].d, color: colors[1], itemStyle: { borderRadius: [4, 4, 0, 0] }, barWidth: '35%' }
+                        { name: data.s[0].n, type: 'bar', data: data.s[0].d, color: 'rgba(255,255,255,0.15)', barWidth: '35%', itemStyle: { borderRadius: [4, 4, 0, 0] } },
+                        {
+                            name: data.s[1].n,
+                            type: 'bar',
+                            data: data.s[1].d.map((v, i) => ({
+                                value: v,
+                                itemStyle: {
+                                    color: v > data.s[0].d[i] ? colors[5] : colors[3],
+                                    borderRadius: [4, 4, 0, 0]
+                                }
+                            })),
+                            barWidth: '35%'
+                        }
                     ];
                     break;
                 case 'radar':
@@ -1024,4 +1070,3 @@
 </body>
 
 </html>
-
